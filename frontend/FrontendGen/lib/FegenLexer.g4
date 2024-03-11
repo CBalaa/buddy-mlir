@@ -44,7 +44,7 @@ ATTRIBUTE: 'attribute';
 
 FUNCTION: 'function';
 
-TYPE_IR: 'typeDef';
+TYPE: 'type';
 
 INT: 'int';
 
@@ -56,6 +56,9 @@ STRING: 'string';
 
 NULL: 'null';
 
+PARAMETERS: 'parameters';
+
+ASSEMBLY_FORMAT: 'assemblyFormat';
 
 
 

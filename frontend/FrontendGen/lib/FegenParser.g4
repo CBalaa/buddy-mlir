@@ -5,15 +5,31 @@ options {
 }
 
 fegenSpec
-    : fegenDecl prequelConstruct* rules EOF
+    : fegenDecl prequelConstruct* typeDecl rules EOF
+    ;
+
+fegenDecl
+    : FEGEN identifier Semi
     ;
 
 prequelConstruct
     : BeginInclude INCLUDE_CONTENT* EndInclude
     ;
 
-fegenDecl
-    : FEGEN identifier Semi
+typeDecl
+    : TYPE prefixedName typeBlock
+    ; 
+
+typeBlock
+    : LeftBrace parametersSpec assemblyFormatSpec? RightBrace
+    ;
+
+parametersSpec
+    : PARAMETERS varDecls
+    ;
+
+assemblyFormatSpec
+    : ASSEMBLY_FORMAT LeftBracket StringLiteral RightBracket
     ;
 
 rules
