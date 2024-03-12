@@ -54,7 +54,7 @@ TENSOR: 'tensor';
 
 STRING: 'string';
 
-NULL: 'null';
+EMPTY: 'null';
 
 PARAMETERS: 'parameters';
 

@@ -21,8 +21,6 @@
 #include "FegenLexer.h"
 #include "FegenParser.h"
 #include "FegenVisitor.h"
-#include "FegenRule.h"
-#include "FegenValue.h"
 
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
@@ -49,11 +47,11 @@ llvm::cl::opt<Action> emitAction(
     llvm::cl::values(clEnumValN(dumpAll, "all", "put out all file")));
 
 void emitG4File(llvm::raw_fd_ostream &os) {
-  fegen::RuleMap::getRuleMap().emitG4File(os);
+  
 }
 
 void emitVisitorFile(llvm::raw_fd_ostream &headfile, llvm::raw_fd_ostream &cppfile) {
-  fegen::RuleMap::getRuleMap().emitVisitorFile(headfile, cppfile);
+  
 }
 
 
@@ -62,16 +60,16 @@ int main(int argc, char *argv[]) {
   // parser input file with ANTLR
   std::fstream in(inputFileName);
   ANTLRInputStream input(in);
-  FegenLexer lexer(&input);
+  fegen::FegenLexer lexer(&input);
   CommonTokenStream tokens(&lexer);
-  FegenParser parser(&tokens);
-  auto fegenModuleCst = parser.fegenModule();
-  FegenVisitor visitor;
-  visitor.visit(fegenModuleCst);
+  fegen::FegenParser parser(&tokens);
+  auto fegenCst = parser.fegenSpec();
+  fegen::FegenVisitor visitor;
+  visitor.visit(fegenCst);
 
   // dump fegen ast
   if (emitAction == Action::dumpAst){
-    llvm::errs() << fegenModuleCst->toStringTree() << "\n";
+    llvm::errs() << fegenCst->toStringTree() << "\n";
   }else if(emitAction == Action::dumpAntlr){
     emitG4File(llvm::outs());
   }else if(emitAction == Action::dumpVisitor) {

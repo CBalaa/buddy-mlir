@@ -38,7 +38,7 @@ rules
 
 ruleSpec
     : parserRuleSpec
-    | lexerRuleSpec
+    | lexerRuleSpec 
     ;
 
 parserRuleSpec
@@ -252,7 +252,7 @@ assignStmt
 expression
     : variable
     | functionCallStmt
-    | NULL
+    | EMPTY
     ;
 
 variable

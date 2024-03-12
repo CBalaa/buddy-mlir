@@ -26,9 +26,7 @@ add_library(fegen_antlr_generated
 )
 
 add_library(FegenSupport
-    FegenRule.cpp
-    FegenValue.cpp
-    FegenIR.cpp
+    FegenManager.cpp
 )
 
 llvm_map_components_to_libnames(llvm_libs support)
