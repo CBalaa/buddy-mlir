@@ -21,7 +21,7 @@ private:
     std::vector<FegenType*> inputTypeList;
     // return type
     FegenType* returnType;
-    explicit FegenFunction(llvm::StringRef name, std::vector<FegenType*> inputTypeList, FegenType* returnType);
+    explicit FegenFunction(llvm::StringRef name, std::vector<FegenType*>&& inputTypeList, FegenType* returnType);
 public:
     static FegenFunction* get(llvm::StringRef name, std::vector<FegenType*> inputTypeList, FegenType* returnType = nullptr);
     ~FegenFunction() = default;
@@ -38,7 +38,7 @@ private:
     std::vector<FegenValue*> arguments;
     // results of operation
     std::vector<FegenValue*> results;
-    explicit FegenOperation(llvm::StringRef dialectName, llvm::StringRef operationName, std::vector<FegenValue*> arguments, std::vector<FegenValue*> results);
+    explicit FegenOperation(llvm::StringRef dialectName, llvm::StringRef operationName, std::vector<FegenValue*>&& arguments, std::vector<FegenValue*>&& results);
 public:
     static FegenOperation* get(llvm::StringRef dialectName, llvm::StringRef operationName, std::vector<FegenValue*> arguments, std::vector<FegenValue*> results);
     ~FegenOperation()=default;
@@ -59,8 +59,10 @@ private:
     std::vector<FegenValue*> parameters;
     // context of type in parser tree
     FegenParser::TypeDeclContext* ctx;
-    explicit FegenType(TypeKind kind, llvm::StringRef dialectName, llvm::StringRef typeName, llvm::StringRef assemblyFormat, std::vector<FegenValue*> parameters, FegenParser::TypeDeclContext* ctx);
+    explicit FegenType(TypeKind kind, llvm::StringRef dialectName, llvm::StringRef typeName, llvm::StringRef assemblyFormat, std::vector<FegenValue*>&& parameters, FegenParser::TypeDeclContext* ctx);
 public:
+    // convert from fegen type to cpp type
+    std::string convertToCppType();
     static FegenType* get(TypeKind kind, llvm::StringRef dialectName, llvm::StringRef typeName, llvm::StringRef assemblyFormat, std::vector<FegenValue*> parameters, FegenParser::TypeDeclContext* ctx);
     ~FegenType()=default;
 };
@@ -89,7 +91,7 @@ private:
     std::vector<FegenValue*> returns;
     // context in parser tree
     FegenParser::ActionAltContext* ctx;
-    explicit FegenRule(std::string content, FegenNode* src, std::vector<FegenValue*> inputs, std::vector<FegenValue*> returns, FegenParser::ActionAltContext* ctx);
+    explicit FegenRule(std::string content, FegenNode* src, std::vector<FegenValue*>&& inputs, std::vector<FegenValue*>&& returns, FegenParser::ActionAltContext* ctx);
 public:
     static FegenRule* get(std::string content, FegenNode* src, std::vector<FegenValue*> inputs, std::vector<FegenValue*> returns, FegenParser::ActionAltContext* ctx);
 };
@@ -98,9 +100,11 @@ class FegenNode {
 private:
     std::vector<FegenRule*> rules;
     FegenParser::RuleSpecContext* ctx;
-    explicit FegenNode(FegenType* returnType, std::vector<FegenRule*> rules, FegenParser::RuleSpecContext* ctx);
+    explicit FegenNode(std::vector<FegenRule*>&& rules, FegenParser::RuleSpecContext* ctx);
 public:
-    static FegenNode* get(FegenType* returnType, std::vector<FegenRule*> rules, FegenParser::RuleSpecContext* ctx);
+    static FegenNode* get(std::vector<FegenRule*> rules, FegenParser::RuleSpecContext* ctx);
+    static FegenNode* get(FegenParser::RuleSpecContext* ctx);
+    void addFegenRule(FegenRule* rule);
     // release rules first
     ~FegenNode();
 };
