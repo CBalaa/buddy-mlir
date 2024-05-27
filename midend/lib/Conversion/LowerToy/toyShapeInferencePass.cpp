@@ -56,6 +56,9 @@ struct ShapeInferencePass
     : public mlir::PassWrapper<ShapeInferencePass, OperationPass<toy::FuncOp>> {
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ShapeInferencePass)
 
+  StringRef getArgument() const final { return "toy-shape-inference"; }
+  StringRef getDescription() const final { return "toy shape inference."; }
+
   void runOnOperation() override {
     auto f = getOperation();
 
@@ -120,3 +123,9 @@ struct ShapeInferencePass
 std::unique_ptr<mlir::Pass> mlir::toy::createShapeInferencePass() {
   return std::make_unique<ShapeInferencePass>();
 }
+
+namespace mlir {
+namespace buddy {
+void registerToyShapeInferencePass() { PassRegistration<ShapeInferencePass>(); }
+} // namespace buddy
+} // namespace mlir

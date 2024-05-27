@@ -73,6 +73,7 @@ void registerDeviceSchedulePass();
 void registerLowerSchePass();
 void registerLowerToyToLLVMPass();
 void registerLowerToyToAffinePass();
+void registerToyShapeInferencePass();
 } // namespace buddy
 } // namespace mlir
 
@@ -106,6 +107,7 @@ int main(int argc, char **argv) {
 
   mlir::buddy::registerLowerToyToLLVMPass();
   mlir::buddy::registerLowerToyToAffinePass();
+  mlir::buddy::registerToyShapeInferencePass();
 
   mlir::DialectRegistry registry;
   // Register all MLIR core dialects.
