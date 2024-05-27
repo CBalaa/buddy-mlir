@@ -3,6 +3,8 @@ add_subdirectory(LowerBud)
 add_subdirectory(LowerDIP)
 add_subdirectory(LowerRVV)
 add_subdirectory(LowerDAP)
+add_subdirectory(LowerToy)
+
 add_subdirectory(DAPVectorization)
 add_subdirectory(MatMulOptimization)
 add_subdirectory(TransposeOptimization)
@@ -12,3 +14,4 @@ add_subdirectory(LowerGemmini)
 add_subdirectory(LowerLinalgToGemmini)
 add_subdirectory(SchedulingOnDevices)
 add_subdirectory(LowerSche)
+
