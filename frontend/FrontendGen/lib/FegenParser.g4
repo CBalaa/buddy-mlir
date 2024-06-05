@@ -231,8 +231,12 @@ inputsSpec
 	;
 
 varDecls
-	: LeftBracket typeSpec identifier (Comma typeSpec identifier)* RightBracket
+	: LeftBracket varElement (Comma varElement)* RightBracket
 	;
+
+varElement
+    : typeSpec identifier
+    ;
 
 prefixedName
     : identifier (Dot identifier)? 

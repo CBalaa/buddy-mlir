@@ -1,15 +1,13 @@
 #include "FegenManager.h"
 
 fegen::FegenFunction::FegenFunction(llvm::StringRef name,
-                                    std::vector<FegenType *> &&inputTypeList,
-                                    FegenType *returnType)
-    : name(name), inputTypeList(inputTypeList), returnType(returnType) {}
+                                    std::vector<FegenValue *> &&inputTypeList)
+    : name(name), inputTypeList(inputTypeList) {}
 
 fegen::FegenFunction *
 fegen::FegenFunction::get(llvm::StringRef name,
-                          std::vector<FegenType *> inputTypeList,
-                          FegenType *returnType) {
-  return new fegen::FegenFunction(name, std::move(inputTypeList), returnType);
+                          std::vector<FegenValue *> inputTypeListe) {
+  return new fegen::FegenFunction(name, std::move(inputTypeList));
 }
 
 fegen::FegenOperation::FegenOperation(llvm::StringRef dialectName,

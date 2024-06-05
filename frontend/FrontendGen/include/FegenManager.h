@@ -20,15 +20,19 @@ private:
   // input types
   std::vector<FegenType *> inputTypeList;
   // return type
-  FegenType *returnType;
+  // FegenType *returnType;
+  // explicit FegenFunction(llvm::StringRef name,
+  //                        std::vector<FegenType *> &&inputTypeList,
+  //                        FegenType *returnType);
   explicit FegenFunction(llvm::StringRef name,
-                         std::vector<FegenType *> &&inputTypeList,
-                         FegenType *returnType);
+                         std::vector<FegenValue *> &&inputTypeList);
 
 public:
+  // static FegenFunction *get(llvm::StringRef name,
+  //                           std::vector<FegenType *> inputTypeList,
+  //                           FegenType *returnType = nullptr);
   static FegenFunction *get(llvm::StringRef name,
-                            std::vector<FegenType *> inputTypeList,
-                            FegenType *returnType = nullptr);
+                            std::vector<FegenValue *> inputTypeListr);
   ~FegenFunction() = default;
 };
 
