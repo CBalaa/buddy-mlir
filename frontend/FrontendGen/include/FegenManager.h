@@ -73,10 +73,10 @@ public:
                             std::vector<FegenValue *> inputTypeList,
                             FegenType *returnType = nullptr);
   ~FegenFunction() = default;
-    std::string getName();
-    std::vector<FegenValue *> &getInputTypeList();
-    FegenValue *getInputTypeList(size_t i);
-    FegenType *getReturnType();
+  std::string getName();
+  std::vector<FegenValue *> &getInputTypeList();
+  FegenValue *getInputTypeList(size_t i);
+  FegenType *getReturnType();
 };
 
 class FegenValue;

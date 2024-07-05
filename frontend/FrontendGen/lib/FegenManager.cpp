@@ -1,5 +1,5 @@
-#include "FegenParserBaseVisitor.h"
 #include "FegenManager.h"
+#include "FegenParserBaseVisitor.h"
 #include "Scope.h"
 #include <algorithm>
 #include <cassert>
@@ -1448,7 +1448,7 @@ fegen::inferenceType(std::vector<fegen::FegenRightValue::Expression *> operands,
   // TODO: infer type
   return fegen::FegenType::getInt32Type();
 }
-namespace fegen{
+namespace fegen {
 
 // class StmtVisitor : public FegenParserBaseVisitor{
 // public:
