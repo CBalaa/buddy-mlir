@@ -193,8 +193,8 @@ public:
   static TypePtr getVectorType(RightValue elementType, RightValue size);
 
   // Tensor<shape, elementType>
-  static TypePtr getTensorType(TypePtr elementType, RightValue shape);
-  static TypePtr getTensorType(RightValue elementType, RightValue shape);
+  static TypePtr getTensorType(TypePtr elementType);
+  static TypePtr getTensorType(RightValue elementType);
 
   // Optional<elementType>
   static TypePtr getOptionalType(TypePtr elementType);
@@ -369,6 +369,7 @@ public:
   };
 
   struct OperatorCall : public ExpressionNode {
+    static std::unordered_map<FegenOperator, std::string> cppOperatorMap;
     FegenOperator op;
     std::vector<std::shared_ptr<Expression>> params;
     OperatorCall(FegenOperator, std::vector<std::shared_ptr<Expression>>);
@@ -402,6 +403,7 @@ public:
     IntegerLiteral(largestInt content, size_t size);
     virtual std::any getContent() override;
     virtual std::string toString() override;
+    virtual std::string toStringForCppKind() override;
     virtual TypePtr getType() override;
   };
 
@@ -411,6 +413,7 @@ public:
     FloatPointLiteral(long double content, size_t size);
     virtual std::any getContent() override;
     virtual std::string toString() override;
+    virtual std::string toStringForCppKind() override;
     virtual TypePtr getType() override;
   };
 
@@ -419,6 +422,7 @@ public:
     StringLiteral(std::string content);
     virtual std::any getContent() override;
     virtual std::string toString() override;
+    virtual std::string toStringForCppKind() override;
     virtual TypePtr getType() override;
   };
 
@@ -448,6 +452,7 @@ public:
     LeftValue(Value *content);
     virtual std::any getContent() override;
     virtual std::string toString() override;
+    virtual std::string toStringForCppKind() override;
     virtual TypePtr getType() override;
   };
 
@@ -507,6 +512,7 @@ class IntegerType : public Type {
   public:
   IntegerType(RightValue size, TypeDefination* tyDef);
   IntegerType(RightValue size);
+  largestInt getSize();
   // for generating typedef td file.
   virtual std::string toStringForTypedef() override;
   // for generating op def td file.
@@ -519,6 +525,7 @@ class FloatPointType : public Type {
   RightValue size;
   public:
   FloatPointType(RightValue size);
+  largestInt getSize();
   // for generating typedef td file.
   virtual std::string toStringForTypedef() override;
   // for generating op def td file.
@@ -550,12 +557,12 @@ class VectorType : public Type {
   public:
   VectorType(RightValue elementType, RightValue size);
 };
-// Tensor<ty, shape>
+// Tensor<ty>
 class TensorType : public Type {
   RightValue elementType;
-  RightValue shape;
   public:
-  TensorType(RightValue elementType, RightValue shape);
+  TensorType(RightValue elementType);
+  virtual std::string toStringForOpdef() override;
 };
 // Optional<ty>
 class OptionalType : public Type {

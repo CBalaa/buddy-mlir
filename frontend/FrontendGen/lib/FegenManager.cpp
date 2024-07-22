@@ -151,7 +151,7 @@ fegen::TypePtr fegen::Type::getIntegerType(fegen::RightValue size) {
 }
 
 fegen::TypePtr fegen::Type::getFloatPointType(fegen::RightValue size) {
-  return std::make_shared<IntegerType>(size);
+  return std::make_shared<FloatPointType>(size);
 }
 
 fegen::TypePtr fegen::Type::getStringType() {
@@ -182,17 +182,15 @@ fegen::TypePtr fegen::Type::getVectorType(RightValue elementType,
   return Type::getVectorType(ty, size);
 }
 
-fegen::TypePtr fegen::Type::getTensorType(fegen::TypePtr elementType,
-                                          fegen::RightValue shape) {
+fegen::TypePtr fegen::Type::getTensorType(fegen::TypePtr elementType) {
   assert(elementType->typeLevel == 3);
   return std::make_shared<TensorType>(
-      fegen::RightValue::getTypeRightValue(elementType), shape);
+      fegen::RightValue::getTypeRightValue(elementType));
 }
 
-fegen::TypePtr fegen::Type::getTensorType(RightValue elementType,
-                                          RightValue shape) {
+fegen::TypePtr fegen::Type::getTensorType(RightValue elementType) {
   auto ty = std::any_cast<fegen::TypePtr>(elementType.getContent());
-  return Type::getTensorType(ty, shape);
+  return Type::getTensorType(ty);
 }
 
 fegen::TypePtr fegen::Type::getOptionalType(fegen::TypePtr elementType) {
@@ -329,6 +327,11 @@ fegen::IntegerType::IntegerType(fegen::RightValue size)
            size.isConstant()),
       size(size) {}
 
+fegen::largestInt fegen::IntegerType::getSize() {
+  assert(this->size.getLiteralKind() == RightValue::LiteralKind::INT);
+  return std::any_cast<fegen::largestInt>(this->size.getContent());
+}
+
 std::string fegen::IntegerType::toStringForTypedef() {
   auto content = std::any_cast<largestInt>(this->size.getContent());
   if (content == 32) {
@@ -381,6 +384,11 @@ fegen::FloatPointType::FloatPointType(fegen::RightValue size)
            size.isConstant()),
       size(size) {}
 
+fegen::largestInt fegen::FloatPointType::getSize() {
+  assert(this->size.getLiteralKind() == RightValue::LiteralKind::INT);
+  return std::any_cast<fegen::largestInt>(this->size.getContent());
+}
+
 std::string fegen::FloatPointType::toStringForTypedef() {
   auto content = std::any_cast<largestInt>(this->size.getContent());
   if (content == 32) {
@@ -394,16 +402,39 @@ std::string fegen::FloatPointType::toStringForTypedef() {
 }
 
 std::string fegen::FloatPointType::toStringForOpdef() {
-  return "FloatPointType::toStringForOpdef";
+  auto content = std::any_cast<largestInt>(this->size.getContent());
+  switch (this->getTypeKind()) {
+  case Type::TypeKind::ATTRIBUTE: {
+    if (content == 32) {
+      return "F32ElementsAttr";
+    } else if (content == 64) {
+      return "F64ElementsAttr";
+    }
+    break;
+  }
+  case Type::TypeKind::OPERAND: {
+    if (content == 32) {
+      return "F32";
+    } else if (content == 64) {
+      return "F64";
+    }
+    break;
+  }
+  default: {
+    assert(false);
+  }
+  }
+  assert(false);
 }
 
 std::string fegen::FloatPointType::toStringForCppKind() {
   auto content = std::any_cast<largestInt>(this->size.getContent());
   if (content == 32) {
     return "float";
-  }
-  if (content == 64) {
+  } else if (content == 64) {
     return "double";
+  } else if (content == 128) {
+    return "long double";
   } else {
     std::cerr << "unsupport type: " << this->getTypeName() << std::endl;
     assert(false);
@@ -453,12 +484,55 @@ fegen::VectorType::VectorType(RightValue elementType, RightValue size)
       elementType(elementType), size(size) {}
 
 // class TensorType
-fegen::TensorType::TensorType(RightValue elementType, RightValue shape)
+fegen::TensorType::TensorType(RightValue elementType)
     : Type(fegen::Type::TypeKind::CPP,
-           jointTypeName(FEGEN_TENSOR, {elementType, shape}),
+           jointTypeName(FEGEN_TENSOR, {elementType}),
            fegen::Manager::getManager().getTypeDefination(FEGEN_TENSOR), 3,
-           (elementType.isConstant() && shape.isConstant())),
-      elementType(elementType), shape(shape) {}
+           elementType.isConstant()),
+      elementType(elementType) {}
+
+std::string fegen::TensorType::toStringForOpdef() {
+  auto elemTy = std::any_cast<TypePtr>(this->elementType.getContent());
+  auto elemTyName = elemTy->getTypeDefination()->getName();
+  if (elemTyName != FEGEN_INTEGER && elemTyName != FEGEN_FLOATPOINT) {
+    assert(false);
+  }
+  if (elemTyName == FEGEN_INTEGER) {
+    auto intTy = std::dynamic_pointer_cast<IntegerType>(elemTy);
+    auto size = intTy->getSize();
+    switch (size) {
+    case 1:
+      return "I1Tensor";
+    case 8:
+      return "I8Tensor";
+    case 16:
+      return "I16Tensor";
+    case 32:
+      return "I32Tensor";
+    case 64:
+      return "I64Tensor";
+    default: {
+      std::cerr << "unsupprot type: " << this->getTypeName() << std::endl;
+      exit(0);
+    }
+    }
+  } else {
+    auto floatTy = std::dynamic_pointer_cast<FloatPointType>(elemTy);
+    auto size = floatTy->getSize();
+    switch (size) {
+    case 16:
+      return "F16Tensor";
+    case 32:
+      return "F32Tensor";
+    case 64:
+      return "F64Tensor";
+    default: {
+      std::cerr << "unsupprot type: " << this->getTypeName() << std::endl;
+      exit(0);
+    }
+    }
+  }
+}
 
 // class OptionalType
 fegen::OptionalType::OptionalType(RightValue elementType)
@@ -596,8 +670,8 @@ fegen::TensorTemplateType::TensorTemplateType()
 
 fegen::TypePtr
 fegen::TensorTemplateType::instantiate(std::vector<RightValue> params) {
-  assert(params.size() == 2);
-  return Type::getTensorType(params[0], params[1]);
+  assert(params.size() == 1);
+  return Type::getTensorType(params[0]);
 }
 
 // class OptionalTemplateType
@@ -787,16 +861,6 @@ fegen::TypePtr fegen::RightValue::ExpressionNode::getType() {
   assert(FEGEN_NOT_IMPLEMENTED_ERROR);
 }
 
-inline bool isBinaryOperator(fegen::FegenOperator &op) {
-  switch (op) {
-  case fegen::FegenOperator::NEG:
-  case fegen::FegenOperator::NOT:
-    return false;
-  default:
-    return true;
-  }
-}
-
 // class FunctionCall
 inline bool isFuncParamsAllConstant(
     std::vector<std::shared_ptr<fegen::RightValue::Expression>> &params) {
@@ -888,8 +952,48 @@ std::string fegen::RightValue::OperatorCall::toStringForOpdef() {
   return "OperatorCall::toStringForOpdef";
 }
 
+inline bool isBinaryOperator(fegen::FegenOperator &op) {
+  switch (op) {
+  case fegen::FegenOperator::NEG:
+  case fegen::FegenOperator::NOT:
+    return false;
+  default:
+    return true;
+  }
+}
+
+std::unordered_map<fegen::FegenOperator, std::string>
+    fegen::RightValue::OperatorCall::cppOperatorMap = {
+        {fegen::FegenOperator::OR, "||"},
+        {fegen::FegenOperator::AND, "&&"},
+        {fegen::FegenOperator::EQUAL, "=="},
+        {fegen::FegenOperator::NOT_EQUAL, "!="},
+        {fegen::FegenOperator::LESS, "<"},
+        {fegen::FegenOperator::LESS_EQUAL, "<="},
+        {fegen::FegenOperator::GREATER, ">"},
+        {fegen::FegenOperator::GREATER_EQUAL, ">="},
+        {fegen::FegenOperator::ADD, "+"},
+        {fegen::FegenOperator::SUB, "-"},
+        {fegen::FegenOperator::MUL, "*"},
+        {fegen::FegenOperator::DIV, "/"},
+        {fegen::FegenOperator::MOD, "%"},
+        {fegen::FegenOperator::POWER, "pow"},
+        {fegen::FegenOperator::NEG, "-"},
+        {fegen::FegenOperator::NOT, "!"}};
+
 std::string fegen::RightValue::OperatorCall::toStringForCppKind() {
-  return "OperatorCall::toStringForCppKind";
+  std::string res;
+  if (isBinaryOperator(this->op)) {
+    res.append(this->params[0]->toStringForCppKind());
+    res.append(" ");
+    res.append(OperatorCall::cppOperatorMap[this->op]);
+    res.append(" ");
+    res.append(this->params[1]->toStringForCppKind());
+  } else {
+    res.append(OperatorCall::cppOperatorMap[this->op]);
+    res.append(this->params[0]->toStringForCppKind());
+  }
+  return res;
 }
 
 std::any fegen::RightValue::OperatorCall::getContent() { return this; }
@@ -947,6 +1051,10 @@ std::string fegen::RightValue::IntegerLiteral::toString() {
   return std::to_string(this->content);
 }
 
+std::string fegen::RightValue::IntegerLiteral::toStringForCppKind() {
+  return std::to_string(this->content);
+}
+
 fegen::TypePtr fegen::RightValue::IntegerLiteral::getType() {
   return fegen::Type::getIntegerType(fegen::RightValue::getInteger(this->size));
 }
@@ -962,6 +1070,10 @@ std::any fegen::RightValue::FloatPointLiteral::getContent() {
 }
 
 std::string fegen::RightValue::FloatPointLiteral::toString() {
+  return std::to_string(this->content);
+}
+
+std::string fegen::RightValue::FloatPointLiteral::toStringForCppKind() {
   return std::to_string(this->content);
 }
 
@@ -985,6 +1097,10 @@ std::string fegen::RightValue::StringLiteral::toString() {
   res.append(this->content);
   res.append("\"");
   return res;
+}
+
+std::string fegen::RightValue::StringLiteral::toStringForCppKind() {
+  return "\"" + this->content + "\"";
 }
 
 fegen::TypePtr fegen::RightValue::StringLiteral::getType() {
@@ -1119,6 +1235,10 @@ fegen::RightValue::LeftValue::LeftValue(fegen::Value *content)
 std::any fegen::RightValue::LeftValue::getContent() { return this->content; }
 
 std::string fegen::RightValue::LeftValue::toString() {
+  return this->content->getName();
+}
+
+std::string fegen::RightValue::LeftValue::toStringForCppKind() {
   return this->content->getName();
 }
 
@@ -1372,51 +1492,6 @@ public:
     return this->stream;
   }
 };
-
-class StmtGenerator : FegenParserBaseVisitor {
-private:
-  Manager &manager;
-  Emitter &emitter;
-
-public:
-  StmtGenerator(Emitter &emitter)
-      : manager(Manager::getManager()), emitter(emitter) {}
-  std::any visitVarDeclStmt(FegenParser::VarDeclStmtContext *ctx) override {
-    auto var = manager.getStmtContent<Value *>(ctx->identifier());
-    switch (var->getType()->getTypeKind()) {
-    case fegen::Type::TypeKind::CPP: {
-      this->emitter << var->getType()->toStringForCppKind() << " "
-                    << var->getName();
-      if (ctx->expression()) {
-        auto expr = this->manager.getStmtContent<RightValue::Expression *>(
-            ctx->expression());
-        this->emitter << " = " << expr->toStringForCppKind();
-      }
-      this->emitter << ";";
-      this->emitter.newLine();
-      break;
-    }
-    case fegen::Type::TypeKind::ATTRIBUTE: {
-      break;
-    }
-    case fegen::Type::TypeKind::OPERAND: {
-      break;
-    }
-    }
-    return nullptr;
-  }
-
-  std::any visitAssignStmt(FegenParser::AssignStmtContext *ctx) override {}
-
-  std::any visitFunctionCall(FegenParser::FunctionCallContext *ctx) override {}
-
-  std::any visitOpInvokeStmt(FegenParser::OpInvokeStmtContext *ctx) override {}
-
-  std::any visitIfStmt(FegenParser::IfStmtContext *ctx) override {}
-
-  std::any visitForStmt(FegenParser::ForStmtContext *ctx) override {}
-};
-
 } // namespace fegen
 
 void fegen::Manager::emitG4() {
@@ -1591,40 +1666,46 @@ void fegen::Manager::emitOpDefination() {
     emitter << "def " << opName << " : " << classname << "<\"" << opName
             << "\", [Pure]> {";
     emitter.newLine();
-    emitter.tab();
-    // summary and description
-    emitter << "let summary = \"This is generated by buddy fegen.\";";
-    emitter.newLine();
-    emitter << "let description = [{This is generated by buddy fegen.}];";
-    emitter.newLine();
-    // arguments
-    emitter << "let arguments = ( ins ";
-    emitter.newLine();
-    emitter.tab();
-    for (auto param : opDef->getArguments()) {
-      auto paramTyStr = param->getType()->toStringForOpdef();
-      auto paramName = param->getName();
-      emitter << paramTyStr << " : $" << paramName;
+    {
+      emitter.tab();
+      // summary and description
+      emitter << "let summary = \"This is generated by buddy fegen.\";";
       emitter.newLine();
-    }
-    emitter.shiftTab();
-    emitter << ");";
-    emitter.newLine();
-    // results
-    emitter << "let results = (outs ";
-    emitter.newLine();
-    emitter.tab();
-    for (auto param : opDef->getArguments()) {
-      auto paramTyStr = param->getType()->toStringForOpdef();
-      auto paramName = param->getName();
-      emitter << paramTyStr << " : $" << paramName;
+      emitter << "let description = [{This is generated by buddy fegen.}];";
       emitter.newLine();
+      // arguments
+      emitter << "let arguments = ( ins ";
+      emitter.newLine();
+      {
+        emitter.tab();
+        for (auto param : opDef->getArguments()) {
+          auto paramTyStr = param->getType()->toStringForOpdef();
+          auto paramName = param->getName();
+          emitter << paramTyStr << " : $" << paramName;
+          emitter.newLine();
+        }
+        emitter.shiftTab();
+      }
+      emitter << ");";
+      emitter.newLine();
+      // results
+      emitter << "let results = (outs ";
+      emitter.newLine();
+      {
+        emitter.tab();
+        for (auto param : opDef->getResults()) {
+          auto paramTyStr = param->getType()->toStringForOpdef();
+          auto paramName = param->getName();
+          emitter << paramTyStr << " : $" << paramName;
+          emitter.newLine();
+        }
+        emitter.shiftTab();
+      }
+      emitter << ");";
+      emitter.newLine();
+      // end of def
+      emitter.shiftTab();
     }
-    emitter.shiftTab();
-    emitter << ");";
-    emitter.newLine();
-    // end of def
-    emitter.shiftTab();
     emitter << "}";
     emitter.newLine();
   }
@@ -1765,10 +1846,7 @@ void fegen::Manager::initbuiltinTypes() {
        fegen::TypeDefination::get(
            FEGEN_DIALECT_NAME, FEGEN_TENSOR,
            {fegen::Value::get(fegen::Type::getMetaType(), "elementType",
-                              fegen::RightValue::getPlaceHolder()),
-            fegen::Value::get(
-                fegen::Type::getListType(fegen::Type::getInt32Type()), "shape",
-                fegen::RightValue::getPlaceHolder())},
+                              fegen::RightValue::getPlaceHolder())},
            nullptr, false)});
 
   // Optional
@@ -1924,11 +2002,11 @@ public:
   std::any visitVarDeclStmt(FegenParser::VarDeclStmtContext *ctx) override {
     auto varType = std::any_cast<fegen::TypePtr>(manager.stmtContentMap[ctx]);
     auto varName = ctx->identifier()->getText();
-    emitter << varType->getTypeName() << " " << varName;
+    emitter << varType->toStringForCppKind() << " " << varName;
     if (ctx->expression()) {
       auto expr = std::any_cast<std::shared_ptr<fegen::RightValue::Expression>>(
           manager.stmtContentMap[ctx->expression()]);
-      emitter << " = " << expr->toString();
+      emitter << " = " << expr->toStringForCppKind();
     }
     return nullptr;
   }
@@ -1936,7 +2014,7 @@ public:
     auto varName = ctx->identifier()->getText();
     auto expr = this->manager.getStmtContent<fegen::RightValue::ExprPtr>(
         ctx->expression());
-    emitter << varName << " = " << expr->toString();
+    emitter << varName << " = " << expr->toStringForCppKind();
     return nullptr;
   }
   std::any visitFunctionCall(FegenParser::FunctionCallContext *ctx) override {
@@ -1967,7 +2045,7 @@ public:
     auto expr = std::any_cast<std::shared_ptr<fegen::RightValue::Expression>>(
         manager.stmtContentMap[ctx->expression()]);
 
-    emitter << "if (" << expr->toString() << "){";
+    emitter << "if (" << expr->toStringForCppKind() << "){";
     emitter.tab();
     emitter.newLine();
     this->visit(ctx->statementBlock());
@@ -1992,7 +2070,7 @@ public:
       emitter << "; ";
       auto expr = std::any_cast<std::shared_ptr<fegen::RightValue::Expression>>(
           manager.stmtContentMap[ctx->expression()]);
-      emitter << expr->toString() << "; ";
+      emitter << expr->toStringForCppKind() << "; ";
       this->visit(ctx->assignStmt(0));
       emitter << ") {";
     } else {
@@ -2000,7 +2078,7 @@ public:
       emitter << " ";
       auto expr = std::any_cast<std::shared_ptr<fegen::RightValue::Expression>>(
           manager.stmtContentMap[ctx->expression()]);
-      emitter << expr->toString() << "; ";
+      emitter << expr->toStringForCppKind() << "; ";
       this->visit(ctx->assignStmt(1));
       emitter << ") {";
     }
@@ -2014,7 +2092,7 @@ public:
   std::any visitReturnBlock(FegenParser::ReturnBlockContext *ctx) override {
     auto expr = std::any_cast<std::shared_ptr<fegen::RightValue::Expression>>(
         manager.stmtContentMap[ctx->expression()]);
-    emitter << "return " << expr->toString();
+    emitter << "return " << expr->toStringForCppKind();
     return nullptr;
   }
 

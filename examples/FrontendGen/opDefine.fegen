@@ -7,3 +7,8 @@ opdef add {
         res = lhs + rhs;
     }
 }
+
+opdef constant {
+    arguments [attribute double value]
+    results [operand Tensor<FloatPoint<64>> res]
+}

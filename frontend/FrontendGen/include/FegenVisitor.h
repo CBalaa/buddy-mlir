@@ -329,7 +329,6 @@ public:
     } else if (ctx->FLOATPOINT()) {
       return fegen::Type::getFloatPointTemplate();
     } else if (ctx->TENSOR()) {
-      // return fegen::FegenType::getTensorTemplate();
       return fegen::Type::getTensorTemplate();
     } else if (ctx->VECTOR()) {
       return fegen::Type::getVectorTemplate();
