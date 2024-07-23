@@ -1978,6 +1978,9 @@ public:
     emitter << "return " << expr->toString();
     return nullptr;
   }
+  std::any visitOpDecl(FegenParser::OpDeclContext *ctx) override {
+    return nullptr;
+  }
 
   // TODO: add op declaration/invoke
 };

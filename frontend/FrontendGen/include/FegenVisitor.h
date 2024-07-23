@@ -722,7 +722,7 @@ public:
 
     fegen::Value *stmt = fegen::Value::get(
         var->getType(), varName, fegen::RightValue::getByExpr(varcontent));
-    manager.stmtContentMap.insert(std::pair{ctx, stmt});
+    manager.addStmtContent(ctx, stmt);
     manager.addStmtContent(ctx->expression(), varcontent);
     return var;
   }
