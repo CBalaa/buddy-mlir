@@ -6,7 +6,6 @@ bool fegen::checkParams(std::vector<fegen::Value *> &expected,
 }
 
 bool fegen::checkListLiteral(
-    std::vector<std::shared_ptr<fegen::RightValue::Expression>>
-        &listLiteral) {
+    std::vector<std::shared_ptr<fegen::RightValue::Expression>> &listLiteral) {
   return true;
 }

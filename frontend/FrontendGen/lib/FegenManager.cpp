@@ -98,9 +98,12 @@ int fegen::Type::getTypeLevel() { return this->typeLevel; }
 
 bool fegen::Type::isConstant() { return this->isConstType; }
 
-bool fegen::Type::isSameType(fegen::Type *type1, fegen::Type *type2) {
-  if (type1->getTypeName() == type2->getTypeName())
+bool fegen::Type::isSameType(fegen::TypePtr type1, fegen::TypePtr type2) {
+  if (type1->getTypeName() == type2->getTypeName()) {
+    std::cout << "1" << std::endl;
     return true;
+  }
+
   else
     return false;
 }
@@ -446,6 +449,8 @@ fegen::StringType::StringType()
     : Type(fegen::Type::TypeKind::CPP, FEGEN_STRING,
            fegen::Manager::getManager().getTypeDefination(FEGEN_STRING), 3,
            true) {}
+
+std::string fegen::StringType::toStringForCppKind() { return "string"; }
 
 // class ListType
 fegen::ListType::ListType(fegen::RightValue elementType)
@@ -1972,11 +1977,12 @@ public:
         std::any_cast<fegen::TypePtr>(manager.stmtContentMap[ctx]);
     auto functionName =
         std::any_cast<std::string>(manager.stmtContentMap[ctx->funcName()]);
-    emitter << returnType->getTypeName() << " " << functionName << "(";
+    emitter << returnType->toStringForCppKind() << " " << functionName << "(";
     auto paraList = std::any_cast<std::vector<fegen::Value *>>(
         manager.stmtContentMap[ctx->funcParams()]);
     for (auto para : paraList) {
-      emitter << para->getType()->getTypeName() << " " << para->getName();
+      emitter << para->getType()->toStringForCppKind() << " "
+              << para->getName();
       if (para != paraList.back())
         emitter << ", ";
     }
@@ -2017,6 +2023,7 @@ public:
     emitter << varName << " = " << expr->toStringForCppKind();
     return nullptr;
   }
+  // TODO:测试并补足函数调用
   std::any visitFunctionCall(FegenParser::FunctionCallContext *ctx) override {
     auto function =
         std::any_cast<fegen::Function *>(manager.stmtContentMap[ctx]);
@@ -2062,7 +2069,6 @@ public:
     emitter << "}";
     return nullptr;
   }
-  // TODO: 支持for循环
   std::any visitForStmt(FegenParser::ForStmtContext *ctx) override {
     if (ctx->varDeclStmt()) {
       emitter << "for (";
@@ -2095,10 +2101,11 @@ public:
     emitter << "return " << expr->toStringForCppKind();
     return nullptr;
   }
-
   std::any visitOpDecl(FegenParser::OpDeclContext *ctx) override {
     return nullptr;
   }
+
+  // TODO: add op declaration/invoke
 };
 
 } // namespace fegen

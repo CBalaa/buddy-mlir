@@ -31,7 +31,6 @@
 #define FEGEN_DIALECT_NAME "fegen_builtin"
 #define FEGEN_NOT_IMPLEMENTED_ERROR false
 
-
 namespace fegen {
 class Type;
 class Manager;
@@ -70,14 +69,12 @@ private:
   std::vector<Value *> inputTypeList;
   // return type
   TypePtr returnType;
-  explicit Function(std::string name,
-                         std::vector<Value *> &&inputTypeList,
-                         TypePtr returnType);
+  explicit Function(std::string name, std::vector<Value *> &&inputTypeList,
+                    TypePtr returnType);
 
 public:
-  static Function *get(std::string name,
-                            std::vector<Value *> inputTypeList,
-                            TypePtr returnType = nullptr);
+  static Function *get(std::string name, std::vector<Value *> inputTypeList,
+                       TypePtr returnType = nullptr);
   ~Function() = default;
   std::string getName();
   std::vector<Value *> &getInputTypeList();
@@ -99,9 +96,9 @@ private:
   // operation body context
   FegenParser::BodySpecContext *ctx;
   explicit Operation(std::string dialectName, std::string operationName,
-                          std::vector<Value *> &&arguments,
-                          std::vector<Value *> &&results,
-                          FegenParser::BodySpecContext *ctx);
+                     std::vector<Value *> &&arguments,
+                     std::vector<Value *> &&results,
+                     FegenParser::BodySpecContext *ctx);
 
 public:
   void setOpName(std::string);
@@ -111,9 +108,9 @@ public:
   std::vector<Value *> &getResults();
   Value *getResults(size_t i);
   static Operation *get(std::string operationName,
-                             std::vector<Value *> arguments,
-                             std::vector<Value *> results,
-                             FegenParser::BodySpecContext *ctx);
+                        std::vector<Value *> arguments,
+                        std::vector<Value *> results,
+                        FegenParser::BodySpecContext *ctx);
   ~Operation() = default;
 };
 
@@ -134,7 +131,8 @@ private:
   bool isConstType;
 
 public:
-  Type(TypeKind kind, std::string name, TypeDefination *tyDef, int typeLevel, bool isConstType);
+  Type(TypeKind kind, std::string name, TypeDefination *tyDef, int typeLevel,
+       bool isConstType);
 
   Type(const Type &) = default;
   Type(Type &&) = default;
@@ -151,7 +149,7 @@ public:
   virtual std::string toStringForOpdef();
   // for generating cpp type kind.
   virtual std::string toStringForCppKind();
-  static bool isSameType(Type *type1, Type *type2);
+  static bool isSameType(TypePtr type1, TypePtr type2);
   virtual ~Type() = default;
 
   // placeholder
@@ -203,7 +201,8 @@ public:
   // Any<[elementType1, elementType2, ...]>
   static TypePtr getAnyType(RightValue elementTypes);
 
-  static TypePtr getCustomeType(std::vector<RightValue> params, TypeDefination* tydef);
+  static TypePtr getCustomeType(std::vector<RightValue> params,
+                                TypeDefination *tydef);
 
   // Integer
   static TypePtr getIntegerTemplate();
@@ -231,7 +230,7 @@ public:
   // Any<[elementType1, elementType2, ...]> (elementType* is template)
   static TypePtr getAnyTemplate(RightValue elementTypes);
 
-  static TypePtr getCustomeTemplate(TypeDefination* tydef);
+  static TypePtr getCustomeTemplate(TypeDefination *tydef);
 };
 
 class TypeDefination {
@@ -247,13 +246,12 @@ private:
 
 public:
   TypeDefination(std::string dialectName, std::string name,
-                      std::vector<fegen::Value *> parameters,
-                      FegenParser::TypeDefinationDeclContext *ctx,
-                      bool ifCustome);
+                 std::vector<fegen::Value *> parameters,
+                 FegenParser::TypeDefinationDeclContext *ctx, bool ifCustome);
   static TypeDefination *get(std::string dialectName, std::string name,
-                                  std::vector<fegen::Value *> parameters,
-                                  FegenParser::TypeDefinationDeclContext *ctx,
-                                  bool ifCustome = true);
+                             std::vector<fegen::Value *> parameters,
+                             FegenParser::TypeDefinationDeclContext *ctx,
+                             bool ifCustome = true);
   std::string getDialectName();
   void setDialectName(std::string);
   std::string getName();
@@ -269,7 +267,7 @@ public:
 class RightValue {
   friend class Type;
   friend class Value;
-  
+
 public:
   enum class LiteralKind {
     MONOSTATE,
@@ -330,8 +328,7 @@ public:
     static std::shared_ptr<ExpressionTerminal> getTypeRightValue(TypePtr);
     static std::shared_ptr<ExpressionTerminal>
     getList(std::vector<std::shared_ptr<Expression>> &);
-    static std::shared_ptr<ExpressionTerminal>
-    getLeftValue(fegen::Value *);
+    static std::shared_ptr<ExpressionTerminal> getLeftValue(fegen::Value *);
   };
 
   struct ExpressionNode : public Expression {
@@ -477,8 +474,7 @@ public:
   static RightValue getFloatPoint(long double content, size_t size = 32);
   static RightValue getString(std::string content);
   static RightValue getTypeRightValue(TypePtr content);
-  static RightValue
-  getList(std::vector<std::shared_ptr<Expression>> &content);
+  static RightValue getList(std::vector<std::shared_ptr<Expression>> &content);
   static RightValue getLeftValue(fegen::Value *content);
   static RightValue getByExpr(std::shared_ptr<Expression> expr);
   ~RightValue() = default;
@@ -489,28 +485,28 @@ private:
 
 // PlaceHolder
 class PlaceHolderType : public Type {
-  public:
+public:
   PlaceHolderType();
 };
 
 // Type
 class MetaType : public Type {
-  public:
+public:
   MetaType();
   // for generating typedef td file.
   virtual std::string toStringForTypedef() override;
-
 };
 // Template
 class MetaTemplate : public Type {
-  public:
+public:
   MetaTemplate();
 };
 // Integer<size>
 class IntegerType : public Type {
   RightValue size;
-  public:
-  IntegerType(RightValue size, TypeDefination* tyDef);
+
+public:
+  IntegerType(RightValue size, TypeDefination *tyDef);
   IntegerType(RightValue size);
   largestInt getSize();
   // for generating typedef td file.
@@ -523,7 +519,8 @@ class IntegerType : public Type {
 // FloatPoint<size>
 class FloatPointType : public Type {
   RightValue size;
-  public:
+
+public:
   FloatPointType(RightValue size);
   largestInt getSize();
   // for generating typedef td file.
@@ -535,13 +532,16 @@ class FloatPointType : public Type {
 };
 // String
 class StringType : public Type {
-  public:
+public:
   StringType();
+  // for generating cpp type kind.
+  virtual std::string toStringForCppKind() override;
 };
 // List<ty>
 class ListType : public Type {
   RightValue elementType;
-  public:
+
+public:
   ListType(RightValue elementType);
   // for generating typedef td file.
   virtual std::string toStringForTypedef() override;
@@ -554,7 +554,8 @@ class ListType : public Type {
 class VectorType : public Type {
   RightValue elementType;
   RightValue size;
-  public:
+
+public:
   VectorType(RightValue elementType, RightValue size);
 };
 // Tensor<ty>
@@ -567,32 +568,35 @@ class TensorType : public Type {
 // Optional<ty>
 class OptionalType : public Type {
   RightValue elementType;
-  public:
+
+public:
   OptionalType(RightValue elementType);
 };
 // Any<[ty1, ty2, ...]>
 class AnyType : public Type {
   RightValue elementTypes;
-  public:
+
+public:
   AnyType(RightValue elementTypes);
 };
 // custome type
 class CustomeType : public Type {
   std::vector<RightValue> params;
-  public:
-  CustomeType(std::vector<RightValue> params, TypeDefination* tydef);
+
+public:
+  CustomeType(std::vector<RightValue> params, TypeDefination *tydef);
 };
 
 class TemplateType : public Type {
-  public:
-  TemplateType(TypeDefination* tydef);
+public:
+  TemplateType(TypeDefination *tydef);
   virtual TypePtr instantiate(std::vector<RightValue> params) = 0;
   virtual ~TemplateType() = default;
 };
 
 // Integer
 class IntegerTemplateType : public TemplateType {
-  public:
+public:
   IntegerTemplateType();
   virtual TypePtr instantiate(std::vector<RightValue> params) override;
   // for generating typedef td file.
@@ -602,7 +606,7 @@ class IntegerTemplateType : public TemplateType {
 };
 // FloatPoint
 class FloatPointTemplateType : public TemplateType {
-  public:
+public:
   FloatPointTemplateType();
   virtual TypePtr instantiate(std::vector<RightValue> params) override;
   // for generating typedef td file.
@@ -610,7 +614,7 @@ class FloatPointTemplateType : public TemplateType {
 };
 // String
 class StringTemplateType : public TemplateType {
-  public:
+public:
   StringTemplateType();
   virtual TypePtr instantiate(std::vector<RightValue> params) override;
   // for generating typedef td file.
@@ -619,7 +623,8 @@ class StringTemplateType : public TemplateType {
 // List<ty> (ty is a template)
 class ListTemplateType : public TemplateType {
   RightValue elementType;
-  public:
+
+public:
   ListTemplateType(RightValue elementType);
   virtual TypePtr instantiate(std::vector<RightValue> params) override;
   virtual std::string toStringForTypedef() override;
@@ -627,41 +632,42 @@ class ListTemplateType : public TemplateType {
 };
 // Vector
 class VectorTemplateType : public TemplateType {
-  public:
+public:
   VectorTemplateType();
   virtual TypePtr instantiate(std::vector<RightValue> params) override;
 };
 // Tensor
 class TensorTemplateType : public TemplateType {
-  public:
+public:
   TensorTemplateType();
   virtual TypePtr instantiate(std::vector<RightValue> params) override;
 };
 // Optional<ty> (ty is a template)
 class OptionalTemplateType : public TemplateType {
   RightValue elementType;
-  public:
+
+public:
   OptionalTemplateType(RightValue elementType);
   virtual TypePtr instantiate(std::vector<RightValue> params) override;
 };
 // Any<[ty1, ty2, ...]> (ty* is a template)
 class AnyTemplateType : public TemplateType {
   RightValue elementTypes;
-  public:
+
+public:
   AnyTemplateType(RightValue elementTypes);
   virtual TypePtr instantiate(std::vector<RightValue> params) override;
 };
 // custome type
 class CustomeTemplateType : public TemplateType {
-  public:
-  CustomeTemplateType(TypeDefination* tydef);
+public:
+  CustomeTemplateType(TypeDefination *tydef);
   virtual TypePtr instantiate(std::vector<RightValue> params) override;
   // for generating typedef td file.
   virtual std::string toStringForTypedef() override;
   // for generating op def td file.
   virtual std::string toStringForOpdef() override;
 };
-
 
 class Value {
   friend class Type;
@@ -676,8 +682,7 @@ public:
   Value(const Value &rhs);
   Value(Value &&rhs);
 
-  static Value *get(TypePtr type, std::string name,
-                         RightValue constant);
+  static Value *get(TypePtr type, std::string name, RightValue constant);
 
   std::string getName();
   TypePtr getType();
@@ -710,11 +715,11 @@ private:
   // context in parser tree
   antlr4::ParserRuleContext *ctx;
   explicit ParserRule(std::string content, ParserNode *src,
-                     antlr4::ParserRuleContext *ctx);
+                      antlr4::ParserRuleContext *ctx);
 
 public:
   static ParserRule *get(std::string content, ParserNode *src,
-                        antlr4::ParserRuleContext *ctx);
+                         antlr4::ParserRuleContext *ctx);
   llvm::StringRef getContent();
   // check and add input value
   bool addInput(Value input);
@@ -735,11 +740,11 @@ private:
   antlr4::ParserRuleContext *ctx;
   NodeType ntype;
   explicit ParserNode(std::vector<ParserRule *> &&rules,
-                     antlr4::ParserRuleContext *ctx, NodeType ntype);
+                      antlr4::ParserRuleContext *ctx, NodeType ntype);
 
 public:
   static ParserNode *get(std::vector<ParserRule *> rules,
-                        antlr4::ParserRuleContext *ctx, NodeType ntype);
+                         antlr4::ParserRuleContext *ctx, NodeType ntype);
   static ParserNode *get(antlr4::ParserRuleContext *ctx, NodeType ntype);
   void addFegenRule(ParserRule *rule);
   // release rules first
@@ -750,13 +755,14 @@ class FegenVisitor;
 
 class Manager {
   friend class FegenVisitor;
+
 private:
-struct OverloadedType {
-  llvm::SmallVector<TypeDefination*, 2> tys;
-  OverloadedType(TypeDefination *);
-  OverloadedType(std::initializer_list<TypeDefination*>&&);
-  TypeDefination* get(unsigned i);
-};
+  struct OverloadedType {
+    llvm::SmallVector<TypeDefination *, 2> tys;
+    OverloadedType(TypeDefination *);
+    OverloadedType(std::initializer_list<TypeDefination *> &&);
+    TypeDefination *get(unsigned i);
+  };
 
 private:
   std::map<std::string, OverloadedType> typeDefMap;
@@ -787,7 +793,7 @@ public:
   void setModuleName(std::string name);
 
   TypeDefination *getTypeDefination(std::string name);
-  TypeDefination* getOverloadedTypeDefination(std::string name);
+  TypeDefination *getOverloadedTypeDefination(std::string name);
   bool addTypeDefination(TypeDefination *tyDef);
   bool addOverloadedTypeDefination(TypeDefination *tyDef);
 
@@ -801,9 +807,8 @@ public:
   void emitBuiltinFunction(fegen::FegenParser::FegenSpecContext *);
 };
 
-TypePtr
-    inferenceType(std::vector<std::shared_ptr<RightValue::Expression>>,
-                  FegenOperator);
+TypePtr inferenceType(std::vector<std::shared_ptr<RightValue::Expression>>,
+                      FegenOperator);
 
 } // namespace fegen
 
